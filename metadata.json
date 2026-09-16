@@ -1,0 +1,8 @@
+{
+  "name": "Cable Internet Plans – Faster Internet, Lower Bills",
+  "description": "We compare plans from top U.S. providers and unlock promos starting from $70 to $100/mo. Check address availability or call 24/7 at (800) 624-0038.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
