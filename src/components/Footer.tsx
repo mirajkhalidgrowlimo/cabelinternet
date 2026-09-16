@@ -1,42 +1,20 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { Phone, Mail } from 'lucide-react';
 import { SITE_CONFIG } from '../config';
 
 interface FooterProps {
   onOpenPolicy: (type: 'privacy' | 'terms' | 'disclaimer') => void;
   onNavScroll: (href: string) => void;
-  onOpenAdmin?: () => void;
   onNavigate?: (path: string) => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onOpenPolicy, onNavScroll, onOpenAdmin, onNavigate }) => {
-  const clickCountRef = useRef(0);
-  const clickTimeoutRef = useRef<number | null>(null);
-
+export const Footer: React.FC<FooterProps> = ({ onNavScroll, onNavigate }) => {
   const handleLinkClick = (path: string, fallbackAnchor?: string) => {
     if (onNavigate) {
       onNavigate(path);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (fallbackAnchor) {
       onNavScroll(fallbackAnchor);
-    }
-  };
-
-  // Hidden gesture: tapping the copyright text 3 times within 800ms allows the owner to access admin on mobile
-  const handleSecretCopyrightTap = () => {
-    clickCountRef.current += 1;
-    if (clickTimeoutRef.current) {
-      window.clearTimeout(clickTimeoutRef.current);
-    }
-    if (clickCountRef.current >= 3) {
-      clickCountRef.current = 0;
-      if (onOpenAdmin) {
-        onOpenAdmin();
-      }
-    } else {
-      clickTimeoutRef.current = window.setTimeout(() => {
-        clickCountRef.current = 0;
-      }, 800);
     }
   };
 
@@ -159,10 +137,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPolicy, onNavScroll, onOpe
             <strong>Disclaimer:</strong> Cable Internet Plans is an independent referral service and is not affiliated with, endorsed by, or sponsored by any internet service provider. Pricing, speeds, promotions, and availability vary by address and are determined by the provider at the time of service activation. We may receive a referral fee when customers sign up through our service.
           </p>
           <div className="pt-2 text-[11px] text-slate-400">
-            <span
-              onClick={handleSecretCopyrightTap}
-              className="select-none cursor-default"
-            >
+            <span>
               © {new Date().getFullYear()} Cable Internet Plans. All rights reserved.
             </span>
           </div>

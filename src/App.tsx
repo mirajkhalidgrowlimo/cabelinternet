@@ -10,7 +10,6 @@ import { SupportCasesSection } from './components/SupportCasesSection';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
 import { PolicyModal } from './components/PolicyModal';
-import { AdminPanel } from './components/AdminPanel';
 import { LeadService } from './services/leadService';
 import { ProvidersPage } from './pages/ProvidersPage';
 import { BillHelpPage } from './pages/BillHelpPage';
@@ -21,7 +20,6 @@ import { DisclaimerPage } from './pages/DisclaimerPage';
 
 export default function App() {
   const [modalType, setModalType] = useState<'privacy' | 'terms' | 'disclaimer' | null>(null);
-  const [isAdminOpen, setIsAdminOpen] = useState<boolean>(false);
   const [currentPath, setCurrentPath] = useState<string>(() => {
     const p = window.location.pathname;
     if (p && p !== '/') return p;
@@ -32,7 +30,7 @@ export default function App() {
     return '/';
   });
 
-  // Sync leads from centralized server on mount so all devices have current leads
+  // Sync leads from centralized server on mount
   useEffect(() => {
     LeadService.fetchRemoteLeads();
   }, []);
@@ -59,10 +57,6 @@ export default function App() {
   // Handle location and hash changes
   useEffect(() => {
     const handleLocationChange = () => {
-      if (window.location.hash === '#admin' || window.location.hash === '#portal') {
-        setIsAdminOpen(true);
-        return;
-      }
       const p = window.location.pathname;
       if (p && p !== '/') {
         setCurrentPath(p);
@@ -86,18 +80,6 @@ export default function App() {
     };
   }, []);
 
-  // Keyboard shortcut: Ctrl+Shift+A or Cmd+Shift+A to quickly open Admin Panel
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
-        e.preventDefault();
-        setIsAdminOpen((prev) => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
   const navigate = (path: string) => {
     setCurrentPath(path);
     try {
@@ -107,13 +89,6 @@ export default function App() {
       window.location.hash = path;
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleCloseAdmin = () => {
-    setIsAdminOpen(false);
-    if (window.location.hash === '#admin' || window.location.hash === '#portal') {
-      window.history.replaceState(null, '', window.location.pathname);
-    }
   };
 
   const handleScrollToForm = () => {
@@ -214,15 +189,11 @@ export default function App() {
       <Footer
         onOpenPolicy={(type) => setModalType(type)}
         onNavScroll={handleNavScroll}
-        onOpenAdmin={() => setIsAdminOpen(true)}
         onNavigate={navigate}
       />
 
       {/* Legal & Policy Modal */}
       <PolicyModal type={modalType} onClose={() => setModalType(null)} />
-
-      {/* Private Admin Panel for Owner Only */}
-      <AdminPanel isOpen={isAdminOpen} onClose={handleCloseAdmin} />
     </div>
   );
 }

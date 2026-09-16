@@ -1,16 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { Phone, Check, Users, MapPin, Loader2, CheckCircle2, Wifi, Zap, Shield, Copy, CheckCheck } from 'lucide-react';
+import { Phone, Check, Users, MapPin, Loader2, Wifi, Copy, CheckCheck, Headphones, Signal } from 'lucide-react';
 import { SITE_CONFIG } from '../config';
 import { LeadService, lookupZipInfo } from '../services/leadService';
 import { Lead } from '../types';
 
 export const Hero: React.FC = () => {
   const [zipCode, setZipCode] = useState('');
-  const [streetAddress, setStreetAddress] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [scanStep, setScanStep] = useState(0);
   const [submittedLead, setSubmittedLead] = useState<Lead | null>(null);
@@ -29,17 +24,6 @@ export const Hero: React.FC = () => {
     }
   };
 
-  const formatPhone = (val: string) => {
-    const nums = val.replace(/\D/g, '');
-    if (nums.length <= 3) return nums;
-    if (nums.length <= 6) return `(${nums.slice(0, 3)}) ${nums.slice(3)}`;
-    return `(${nums.slice(0, 3)}) ${nums.slice(3, 6)}-${nums.slice(6, 10)}`;
-  };
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPhone(formatPhone(e.target.value));
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
@@ -50,55 +34,37 @@ export const Hero: React.FC = () => {
       return;
     }
 
-    if (!fullName.trim()) {
-      setFormError('Please enter your full name.');
-      return;
-    }
-
-    const cleanPhone = phone.replace(/\D/g, '');
-    if (cleanPhone.length !== 10) {
-      setFormError('Please enter a valid 10-digit phone number.');
-      return;
-    }
-
-    if (!email.trim() || !email.includes('@')) {
-      setFormError('Please enter a valid email address.');
-      return;
-    }
-
     setIsSubmitting(true);
     setScanStep(1);
 
-    // Multi-phase realistic lookup sequence
     setTimeout(() => {
       setScanStep(2);
-    }, 600);
+    }, 500);
 
     setTimeout(() => {
       setScanStep(3);
-    }, 1200);
+    }, 1000);
 
     setTimeout(() => {
       const zipInfo = lookupZipInfo(cleanZip);
 
       const newLead = LeadService.addLead({
-        fullName: fullName.trim(),
-        phone: phone.trim(),
-        email: email.trim(),
+        fullName: `Visitor (${cleanZip})`,
+        phone: SITE_CONFIG.PHONE_NUMBER,
+        email: 'zipcheck@cableinternetplans.online',
         zipCode: cleanZip,
-        streetAddress: streetAddress.trim() || undefined,
         city: zipInfo.city,
         state: zipInfo.state,
         detectedProviders: zipInfo.providers,
-        selectedPlan: 'Everyday (from $50/mo)',
-        notes: `Customer requested availability check for ${streetAddress ? streetAddress + ', ' : ''}${zipInfo.city}, ${zipInfo.state} ${cleanZip}. Speed capability up to ${zipInfo.maxSpeed}.`,
-        source: 'Website Availability Checker',
+        selectedPlan: 'ZIP Availability Check',
+        notes: `ZIP Availability check for ${zipInfo.city}, ${zipInfo.state} ${cleanZip}. Speed up to ${zipInfo.maxSpeed}.`,
+        source: 'Website ZIP Availability Checker',
       });
 
       setIsSubmitting(false);
       setScanStep(0);
       setSubmittedLead(newLead);
-    }, 1800);
+    }, 1500);
   };
 
   const copyReferenceCode = () => {
@@ -112,10 +78,6 @@ export const Hero: React.FC = () => {
   const handleCheckAnother = () => {
     setSubmittedLead(null);
     setZipCode('');
-    setStreetAddress('');
-    setFullName('');
-    setPhone('');
-    setEmail('');
     setFormError('');
   };
 
@@ -165,12 +127,12 @@ export const Hero: React.FC = () => {
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs sm:text-sm text-slate-600 font-medium">
           <div className="inline-flex items-center gap-1.5">
             <Check className="w-4 h-4 text-slate-700 stroke-[2.5]" />
-            <span>No long forms</span>
+            <span>Instant ZIP check</span>
           </div>
 
           <div className="inline-flex items-center gap-1.5">
             <Users className="w-4 h-4 text-slate-700 stroke-[2.2]" />
-            <span>Real humans</span>
+            <span>5 Live Agents Online</span>
           </div>
 
           <div className="inline-flex items-center gap-1.5">
@@ -186,21 +148,24 @@ export const Hero: React.FC = () => {
           className="mt-8 bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-7 shadow-xs text-left transition-all"
         >
           {submittedLead ? (
-            /* Results Screen: Detailed Availability Verified */
+            /* Results Screen: 5 Agents Available + Hotline Connect */
             <div className="space-y-6">
               
-              {/* Top Verified Banner */}
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
-                <div className="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto mb-2.5 shadow-sm">
-                  <CheckCircle2 className="w-7 h-7" />
+              {/* Agent Availability Banner */}
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center space-y-2">
+                <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1 bg-emerald-600 text-white text-xs font-black uppercase rounded-full tracking-wider mb-1 animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                  <span>5 Agents Available Right Now</span>
                 </div>
-                <h3 className="text-lg sm:text-xl font-black text-slate-900">
-                  High-Speed Internet Verified!
+
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900">
+                  Providers Found for {submittedLead.zipCode}!
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-md mx-auto">
-                  Service lines confirmed in{' '}
+
+                <p className="text-sm text-slate-600 max-w-md mx-auto">
+                  High-speed networks confirmed in{' '}
                   <strong className="text-slate-900 font-bold">
-                    {submittedLead.city}, {submittedLead.state} ({submittedLead.zipCode})
+                    {submittedLead.city}, {submittedLead.state}
                   </strong>{' '}
                   with speeds up to{' '}
                   <strong className="text-emerald-700 font-bold">
@@ -243,7 +208,7 @@ export const Hero: React.FC = () => {
               {detectedInfo && detectedInfo.providers.length > 0 && (
                 <div className="space-y-2">
                   <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                    Networks Servicing Your Address:
+                    Available Providers in {submittedLead.zipCode}:
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {detectedInfo.providers.map((carrier, idx) => (
@@ -259,184 +224,94 @@ export const Hero: React.FC = () => {
                 </div>
               )}
 
-              {/* Verified Promotional Options Available */}
-              <div className="space-y-2.5">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                  Eligible Promotional Packages:
-                </span>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-center">
-                  <div className="border border-slate-200 rounded-xl p-3 bg-white">
-                    <span className="text-xs font-bold text-slate-500 block">Starter</span>
-                    <span className="text-lg font-extrabold text-[#183b6b] block">from $70<span className="text-xs font-medium text-slate-500">/mo</span></span>
-                    <span className="text-[11px] text-slate-600 block mt-0.5">Up to 300 Mbps</span>
-                  </div>
-
-                  <div className="border-2 border-[#183b6b] rounded-xl p-3 bg-blue-50/30 relative">
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#183b6b] text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full tracking-wider">
-                      Popular
-                    </span>
-                    <span className="text-xs font-bold text-slate-700 block">Everyday</span>
-                    <span className="text-lg font-extrabold text-[#183b6b] block">from $50<span className="text-xs font-medium text-slate-500">/mo</span></span>
-                    <span className="text-[11px] text-slate-600 block mt-0.5">Up to 500 Mbps</span>
-                  </div>
-
-                  <div className="border border-slate-200 rounded-xl p-3 bg-white">
-                    <span className="text-xs font-bold text-slate-500 block">Fast / Gigabit</span>
-                    <span className="text-lg font-extrabold text-[#183b6b] block">from $70–$100<span className="text-xs font-medium text-slate-500">/mo</span></span>
-                    <span className="text-[11px] text-slate-600 block mt-0.5">Up to 1,000+ Mbps</span>
-                  </div>
+              {/* Hotline Call Box - 5 Agents Available */}
+              <div className="bg-[#10243e] text-white rounded-xl p-5 text-center space-y-4 shadow-lg border border-blue-900">
+                <div className="flex items-center justify-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                  <Headphones className="w-4 h-4" />
+                  <span>Connect to Hotline • 5 Agents Standing By</span>
                 </div>
-              </div>
 
-              {/* Priority Call-In Card */}
-              <div className="bg-[#10243e] text-white rounded-xl p-4 sm:p-5 text-center space-y-3">
-                <span className="text-xs text-blue-200 uppercase tracking-wider font-semibold block">
-                  Step 2 of 2: Lock In Your Monthly Rate
-                </span>
                 <p className="text-sm text-slate-200 leading-snug">
-                  Call our dispatch desk now with your Reference Code{' '}
-                  <strong className="text-white underline font-mono">{submittedLead.referenceCode}</strong>{' '}
-                  to reserve your installation window and lock in today's promotions.
+                  Call our concierge hotline now to compare live promotions, lock in discounts, and set up your connection.
                 </p>
 
                 <a
                   href={`tel:${SITE_CONFIG.PHONE_NUMBER_RAW}`}
                   id="results-call-now-button"
-                  className="inline-flex items-center justify-center gap-2.5 w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-base rounded-xl transition-all shadow-md active:scale-[0.98]"
+                  className="inline-flex items-center justify-center gap-3 w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-lg sm:text-xl rounded-xl transition-all shadow-md active:scale-[0.98]"
                 >
-                  <Phone className="w-5 h-5" />
-                  <span>Call {SITE_CONFIG.PHONE_NUMBER}</span>
+                  <Phone className="w-6 h-6 animate-bounce" />
+                  <span>Call Hotline: {SITE_CONFIG.PHONE_NUMBER}</span>
                 </a>
 
-                <span className="text-[11px] text-slate-300 block">
-                  Free 2-minute call • 24/7 Live Representative Assistance
-                </span>
+                <div className="flex items-center justify-center gap-4 text-[11px] text-slate-300 pt-1">
+                  <span className="flex items-center gap-1">
+                    <Signal className="w-3 h-3 text-emerald-400" />
+                    Instant Connection
+                  </span>
+                  <span>•</span>
+                  <span>Toll-Free 24/7</span>
+                </div>
               </div>
 
-              {/* Reset to check another address */}
+              {/* Reset to check another ZIP */}
               <div className="text-center pt-1">
                 <button
                   type="button"
                   onClick={handleCheckAnother}
                   className="text-xs font-semibold text-slate-500 hover:text-slate-800 underline cursor-pointer"
                 >
-                  Check another address or modify information
+                  Check another ZIP code
                 </button>
               </div>
 
             </div>
           ) : (
-            /* Standard Address Check Form */
-            <form onSubmit={handleSubmit} className="space-y-3">
+            /* Simple ZIP Code Only Check Form */
+            <form onSubmit={handleSubmit} className="space-y-4">
               {formError && (
                 <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-medium">
                   {formError}
                 </div>
               )}
 
-              {/* ZIP Code */}
               <div>
-                <label htmlFor="hero-zip" className="sr-only">
-                  ZIP Code
+                <label htmlFor="hero-zip" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Enter Your ZIP Code
                 </label>
-                <input
-                  ref={zipInputRef}
-                  id="hero-zip"
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={5}
-                  value={zipCode}
-                  onChange={(e) => setZipCode(e.target.value.replace(/\D/g, ''))}
-                  placeholder="ZIP Code *"
-                  required
-                  disabled={isSubmitting}
-                  className="w-full px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#183b6b] focus:border-transparent transition-all"
-                />
-              </div>
-
-              {/* Street Address (optional) */}
-              <div>
-                <label htmlFor="hero-street" className="sr-only">
-                  Street Address (optional)
-                </label>
-                <input
-                  id="hero-street"
-                  type="text"
-                  value={streetAddress}
-                  onChange={(e) => setStreetAddress(e.target.value)}
-                  placeholder="Street Address (optional)"
-                  disabled={isSubmitting}
-                  className="w-full px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#183b6b] focus:border-transparent transition-all"
-                />
-              </div>
-
-              {/* Full Name */}
-              <div>
-                <label htmlFor="hero-name" className="sr-only">
-                  Full Name
-                </label>
-                <input
-                  id="hero-name"
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Full Name *"
-                  required
-                  disabled={isSubmitting}
-                  className="w-full px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#183b6b] focus:border-transparent transition-all"
-                />
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label htmlFor="hero-phone" className="sr-only">
-                  Phone
-                </label>
-                <input
-                  id="hero-phone"
-                  type="tel"
-                  value={phone}
-                  onChange={handlePhoneChange}
-                  placeholder="Phone Number *"
-                  required
-                  disabled={isSubmitting}
-                  className="w-full px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#183b6b] focus:border-transparent transition-all"
-                />
-              </div>
-
-              {/* Email */}
-              <div>
-                <label htmlFor="hero-email" className="sr-only">
-                  Email
-                </label>
-                <input
-                  id="hero-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email Address *"
-                  required
-                  disabled={isSubmitting}
-                  className="w-full px-4 py-3.5 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#183b6b] focus:border-transparent transition-all"
-                />
+                <div className="relative">
+                  <MapPin className="w-5 h-5 text-slate-400 absolute left-4 top-3.5 pointer-events-none" />
+                  <input
+                    ref={zipInputRef}
+                    id="hero-zip"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={5}
+                    value={zipCode}
+                    onChange={(e) => setZipCode(e.target.value.replace(/\D/g, ''))}
+                    placeholder="e.g. 75001"
+                    required
+                    disabled={isSubmitting}
+                    className="w-full pl-11 pr-4 py-3.5 border-2 border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 text-base font-bold focus:outline-none focus:ring-2 focus:ring-[#183b6b] focus:border-[#183b6b] transition-all"
+                  />
+                </div>
               </div>
 
               {/* Submit / Verification Scanning Progress */}
-              <div className="pt-1">
+              <div>
                 <button
                   type="submit"
                   disabled={isSubmitting}
                   id="form-submit-button"
-                  className="w-full py-3.5 bg-[#183b6b] hover:bg-[#122f55] active:scale-[0.99] text-white font-bold text-sm sm:text-base rounded-xl transition-all shadow-sm flex flex-col items-center justify-center gap-1 cursor-pointer disabled:opacity-90"
+                  className="w-full py-4 bg-[#183b6b] hover:bg-[#122f55] active:scale-[0.99] text-white font-extrabold text-base rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-90"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin" />
                       <span>
-                        {scanStep === 1 && 'Querying local telecom lines...'}
-                        {scanStep === 2 && 'Scanning fiber & cable nodes...'}
-                        {scanStep === 3 && 'Unlocking exclusive promo pricing...'}
+                        {scanStep === 1 && 'Searching local telecom nodes...'}
+                        {scanStep === 2 && 'Connecting available agents...'}
+                        {scanStep === 3 && 'Unlocking local promos...'}
                         {scanStep === 0 && 'Checking Availability...'}
                       </span>
                     </div>
@@ -446,14 +321,16 @@ export const Hero: React.FC = () => {
                 </button>
               </div>
 
-              {/* TCPA Disclaimer text */}
-              <p className="pt-2 text-[11px] leading-relaxed text-slate-500 text-center">
-                By clicking Check Availability, you agree Cable Internet Plans and its partners may contact you about internet offers at the number and email provided, including by autodialed calls/texts. Consent not required for purchase. Msg/data rates may apply. You can opt out anytime. Call us at{' '}
-                <a href={`tel:${SITE_CONFIG.PHONE_NUMBER_RAW}`} className="text-slate-700 underline font-medium">
-                  {SITE_CONFIG.PHONE_NUMBER}
-                </a>
-                .
-              </p>
+              <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+                <span className="flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5 text-emerald-600" />
+                  5 Agents Available
+                </span>
+                <span className="flex items-center gap-1">
+                  <Phone className="w-3.5 h-3.5 text-blue-600" />
+                  Toll-Free 24/7 Hotline
+                </span>
+              </div>
             </form>
           )}
         </div>
