@@ -1,7 +1,7 @@
 import React, { useState, forwardRef, useImperativeHandle } from 'react';
-import { CheckCircle, AlertCircle, Loader2, Send, MapPin, Phone, Mail, User, ShieldCheck, Home } from 'lucide-react';
-import { LeadFormData, FormStatus } from '../types';
+import { Loader2, MapPin, Phone, Wifi, Copy, CheckCheck, Headphones, Signal, Users } from 'lucide-react';
 import { SITE_CONFIG } from '../config';
+import { lookupZipInfo } from '../services/leadService';
 
 export interface AvailabilityFormRef {
   setZipAndFocus: (zip: string) => void;
@@ -10,28 +10,20 @@ export interface AvailabilityFormRef {
 
 interface AvailabilityFormProps {
   initialZip?: string;
-  initialService?: LeadFormData['serviceType'];
 }
 
 export const AvailabilityForm = forwardRef<AvailabilityFormRef, AvailabilityFormProps>(
-  ({ initialZip = '', initialService = 'Internet' }, ref) => {
-    const [formData, setFormData] = useState<LeadFormData>({
-      firstName: '',
-      lastName: '',
-      streetAddress: '',
-      phone: '',
-      email: '',
-      zipCode: initialZip,
-      serviceType: initialService,
-    });
-
-    const [errors, setErrors] = useState<Partial<Record<keyof LeadFormData, string>>>({});
-    const [status, setStatus] = useState<FormStatus>('idle');
-    const [submittedData, setSubmittedData] = useState<LeadFormData | null>(null);
+  ({ initialZip = '' }, ref) => {
+    const [zipCode, setZipCode] = useState(initialZip);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
+    const [copiedRef, setCopiedRef] = useState(false);
+    const [refCode, setRefCode] = useState('');
 
     useImperativeHandle(ref, () => ({
       setZipAndFocus: (zip: string) => {
-        setFormData((prev) => ({ ...prev, zipCode: zip }));
+        setZipCode(zip);
         const zipInput = document.getElementById('form-zipCode');
         if (zipInput) {
           zipInput.focus();
@@ -45,390 +37,228 @@ export const AvailabilityForm = forwardRef<AvailabilityFormRef, AvailabilityForm
       },
     }));
 
-    // Phone format
-    const formatPhoneNumber = (value: string) => {
-      const numbers = value.replace(/\D/g, '');
-      if (numbers.length <= 3) return numbers;
-      if (numbers.length <= 6) return `(${numbers.slice(0, 3)}) ${numbers.slice(3)}`;
-      return `(${numbers.slice(0, 3)}) ${numbers.slice(3, 6)}-${numbers.slice(6, 10)}`;
-    };
-
-    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const formatted = formatPhoneNumber(e.target.value);
-      setFormData((prev) => ({ ...prev, phone: formatted }));
-      if (errors.phone) {
-        setErrors((prev) => ({ ...prev, phone: undefined }));
-      }
-    };
-
-    const validate = (): boolean => {
-      const newErrors: Partial<Record<keyof LeadFormData, string>> = {};
-
-      if (!formData.firstName.trim()) {
-        newErrors.firstName = 'First name is required.';
-      }
-
-      if (!formData.lastName.trim()) {
-        newErrors.lastName = 'Last name is required.';
-      }
-
-      const rawDigits = formData.phone.replace(/\D/g, '');
-      if (!formData.phone.trim()) {
-        newErrors.phone = 'Phone number is required.';
-      } else if (rawDigits.length !== 10) {
-        newErrors.phone = 'Please enter a valid 10-digit phone number.';
-      }
-
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!formData.email.trim()) {
-        newErrors.email = 'Email address is required.';
-      } else if (!emailRegex.test(formData.email.trim())) {
-        newErrors.email = 'Please enter a valid email address.';
-      }
-
-      const zipRegex = /^\d{5}$/;
-      if (!formData.zipCode.trim()) {
-        newErrors.zipCode = 'ZIP code is required.';
-      } else if (!zipRegex.test(formData.zipCode.trim())) {
-        newErrors.zipCode = 'Please enter a 5-digit US ZIP code.';
-      }
-
-      setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      if (!validate()) {
+      setErrorMsg('');
+
+      const cleanZip = zipCode.replace(/\D/g, '');
+      if (cleanZip.length !== 5) {
+        setErrorMsg('Please enter a valid 5-digit US ZIP code.');
         return;
       }
 
-      setStatus('loading');
+      setIsSubmitting(true);
 
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        try {
-          const storedLeads = JSON.parse(localStorage.getItem('cable_plans_leads') || '[]');
-          storedLeads.push({
-            ...formData,
-            submittedAt: new Date().toISOString(),
-          });
-          localStorage.setItem('cable_plans_leads', JSON.stringify(storedLeads));
-        } catch {
-          // fallback
-        }
-
-        setSubmittedData(formData);
-        setStatus('success');
-      } catch {
-        setStatus('error');
-      }
+      setTimeout(() => {
+        const code = `CIP-${Math.floor(10000 + Math.random() * 90000)}`;
+        setRefCode(code);
+        setIsSubmitting(false);
+        setIsSuccess(true);
+      }, 1200);
     };
 
     const handleReset = () => {
-      setStatus('idle');
-      setFormData({
-        firstName: '',
-        lastName: '',
-        streetAddress: '',
-        phone: '',
-        email: '',
-        zipCode: '',
-        serviceType: 'Internet',
-      });
-      setErrors({});
+      setIsSuccess(false);
+      setZipCode('');
+      setErrorMsg('');
     };
+
+    const zipInfo = isSuccess ? lookupZipInfo(zipCode) : null;
 
     return (
       <section
         id="availability-checker"
-        className="relative z-10 -mt-6 md:-mt-10 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto"
+        className="relative z-10 -mt-6 md:-mt-10 px-4 sm:px-6 lg:px-8 max-w-2xl mx-auto"
       >
         <div className="bg-white rounded-3xl shadow-2xl shadow-slate-900/10 border border-slate-200/90 overflow-hidden">
           
           {/* Form Header */}
           <div className="bg-slate-900 px-6 py-6 sm:px-10 sm:py-7 text-white text-center border-b border-slate-800">
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Detailed Address Availability Check
+              ZIP Code Availability Check
             </h2>
             <p className="text-slate-300 text-sm mt-1 max-w-xl mx-auto">
-              Compare cable, fiber, DSL, and wireless options at your address in seconds.
+              Check top high-speed internet providers and local promos in seconds.
             </p>
           </div>
 
           <div className="p-6 sm:p-8 md:p-10">
-            {status === 'success' && submittedData ? (
-              <div
-                id="form-success-card"
-                className="py-6 px-4 text-center max-w-lg mx-auto animate-in fade-in zoom-in-95 duration-300"
-              >
-                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-xs">
-                  <CheckCircle className="w-10 h-10" />
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 mb-2">
-                  Request Received!
-                </h3>
-                <p className="text-slate-600 text-sm mb-6">
-                  We're comparing active plans for ZIP{' '}
-                  <span className="font-bold text-slate-900">{submittedData.zipCode}</span>. A representative will contact you with promotional rates.
-                </p>
-
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left mb-6 space-y-2 text-xs text-slate-700">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Service:</span>
-                    <span className="font-bold">{submittedData.serviceType}</span>
+            {isSuccess ? (
+              <div id="form-success-card" className="space-y-6 text-left">
+                {/* Agent Availability Banner */}
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center space-y-2">
+                  <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1 bg-emerald-600 text-white text-xs font-black uppercase rounded-full tracking-wider mb-1 animate-pulse">
+                    <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                    <span>5 Agents Available Right Now</span>
                   </div>
-                  {submittedData.streetAddress && (
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Address:</span>
-                      <span className="font-bold">{submittedData.streetAddress}</span>
+
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-900">
+                    Providers Found for {zipCode}!
+                  </h3>
+
+                  <p className="text-sm text-slate-600 max-w-md mx-auto">
+                    High-speed networks confirmed in{' '}
+                    <strong className="text-slate-900 font-bold">
+                      {zipInfo?.city}, {zipInfo?.state}
+                    </strong>{' '}
+                    with speeds up to{' '}
+                    <strong className="text-emerald-700 font-bold">
+                      {zipInfo?.maxSpeed || '1,000 Mbps'}
+                    </strong>
+                    .
+                  </p>
+                </div>
+
+                {/* Reference Code */}
+                <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs">
+                  <div>
+                    <span className="text-slate-500 font-medium block text-[11px] uppercase tracking-wider">
+                      Your Promo Reference Code
+                    </span>
+                    <span className="font-mono font-black text-sm text-[#183b6b]">
+                      {refCode}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(refCode);
+                      setCopiedRef(true);
+                      setTimeout(() => setCopiedRef(false), 2500);
+                    }}
+                    type="button"
+                    className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-slate-300 rounded-lg text-slate-700 font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    {copiedRef ? (
+                      <>
+                        <CheckCheck className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="text-emerald-600 text-[11px]">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-slate-500" />
+                        <span className="text-[11px]">Copy Code</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Available Carriers */}
+                {zipInfo && zipInfo.providers.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                      Available Providers in {zipCode}:
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {zipInfo.providers.map((carrier, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1.5 bg-blue-50/70 border border-blue-200 text-blue-900 rounded-lg text-xs font-bold flex items-center gap-1.5"
+                        >
+                          <Wifi className="w-3.5 h-3.5 text-blue-600" />
+                          {carrier}
+                        </span>
+                      ))}
                     </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Phone:</span>
-                    <span className="font-bold">{submittedData.phone}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Email:</span>
-                    <span className="font-bold">{submittedData.email}</span>
-                  </div>
-                </div>
+                )}
 
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                {/* Hotline Call Box */}
+                <div className="bg-[#10243e] text-white rounded-xl p-5 text-center space-y-4 shadow-lg border border-blue-900">
+                  <div className="flex items-center justify-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                    <Headphones className="w-4 h-4" />
+                    <span>Connect to Hotline • 5 Agents Standing By</span>
+                  </div>
+
+                  <p className="text-sm text-slate-200 leading-snug">
+                    Call our concierge hotline now to compare live promotions, lock in discounts, and set up your connection.
+                  </p>
+
                   <a
                     href={`tel:${SITE_CONFIG.PHONE_NUMBER_RAW}`}
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md"
+                    className="inline-flex items-center justify-center gap-3 w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-lg sm:text-xl rounded-xl transition-all shadow-md active:scale-[0.98]"
                   >
-                    <Phone className="w-4 h-4" />
-                    <span>Call Live Agent: {SITE_CONFIG.PHONE_NUMBER}</span>
+                    <Phone className="w-6 h-6 animate-bounce" />
+                    <span>Call Hotline: {SITE_CONFIG.PHONE_NUMBER}</span>
                   </a>
+
+                  <div className="flex items-center justify-center gap-4 text-[11px] text-slate-300 pt-1">
+                    <span className="flex items-center gap-1">
+                      <Signal className="w-3 h-3 text-emerald-400" />
+                      Instant Connection
+                    </span>
+                    <span>•</span>
+                    <span>Toll-Free 24/7</span>
+                  </div>
+                </div>
+
+                <div className="text-center pt-1">
                   <button
+                    type="button"
                     onClick={handleReset}
-                    className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-slate-100 text-slate-800 font-bold text-sm hover:bg-slate-200"
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-800 underline cursor-pointer"
                   >
-                    Check Another Address
+                    Check another ZIP code
                   </button>
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} noValidate className="space-y-5">
-                {status === 'error' && (
-                  <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 flex items-center gap-3 text-rose-700 text-sm">
-                    <AlertCircle className="w-5 h-5 shrink-0" />
-                    <span>Unable to submit at this time. Please call our 24/7 phone line.</span>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {errorMsg && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-medium">
+                    {errorMsg}
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* First Name */}
-                  <div>
-                    <label htmlFor="form-firstName" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      First Name <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
-                      <input
-                        type="text"
-                        id="form-firstName"
-                        name="firstName"
-                        value={formData.firstName}
-                        onChange={(e) => {
-                          setFormData({ ...formData, firstName: e.target.value });
-                          if (errors.firstName) setErrors({ ...errors, firstName: undefined });
-                        }}
-                        placeholder="First name"
-                        className={`w-full pl-10 pr-3.5 py-3 rounded-xl border bg-slate-50/50 text-slate-900 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all ${
-                          errors.firstName ? 'border-rose-500 focus:border-rose-500' : 'border-slate-300 focus:border-blue-600'
-                        }`}
-                      />
-                    </div>
-                    {errors.firstName && (
-                      <p className="text-rose-600 text-xs mt-1 font-medium">{errors.firstName}</p>
-                    )}
-                  </div>
-
-                  {/* Last Name */}
-                  <div>
-                    <label htmlFor="form-lastName" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Last Name <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
-                      <input
-                        type="text"
-                        id="form-lastName"
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={(e) => {
-                          setFormData({ ...formData, lastName: e.target.value });
-                          if (errors.lastName) setErrors({ ...errors, lastName: undefined });
-                        }}
-                        placeholder="Last name"
-                        className={`w-full pl-10 pr-3.5 py-3 rounded-xl border bg-slate-50/50 text-slate-900 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all ${
-                          errors.lastName ? 'border-rose-500 focus:border-rose-500' : 'border-slate-300 focus:border-blue-600'
-                        }`}
-                      />
-                    </div>
-                    {errors.lastName && (
-                      <p className="text-rose-600 text-xs mt-1 font-medium">{errors.lastName}</p>
-                    )}
-                  </div>
-
-                  {/* Street Address */}
-                  <div className="sm:col-span-2">
-                    <label htmlFor="form-streetAddress" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Street Address <span className="text-slate-400 font-normal">(optional, helps verify exact line drop)</span>
-                    </label>
-                    <div className="relative">
-                      <Home className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
-                      <input
-                        type="text"
-                        id="form-streetAddress"
-                        name="streetAddress"
-                        value={formData.streetAddress || ''}
-                        onChange={(e) => setFormData({ ...formData, streetAddress: e.target.value })}
-                        placeholder="e.g. 123 Maple Street, Apt 4B"
-                        className="w-full pl-10 pr-3.5 py-3 rounded-xl border border-slate-300 bg-slate-50/50 text-slate-900 text-sm focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Phone */}
-                  <div>
-                    <label htmlFor="form-phone" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Phone Number <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
-                      <input
-                        type="tel"
-                        id="form-phone"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handlePhoneChange}
-                        placeholder="(555) 000-0000"
-                        maxLength={14}
-                        className={`w-full pl-10 pr-3.5 py-3 rounded-xl border bg-slate-50/50 text-slate-900 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all ${
-                          errors.phone ? 'border-rose-500 focus:border-rose-500' : 'border-slate-300 focus:border-blue-600'
-                        }`}
-                      />
-                    </div>
-                    {errors.phone && (
-                      <p className="text-rose-600 text-xs mt-1 font-medium">{errors.phone}</p>
-                    )}
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label htmlFor="form-email" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Email Address <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
-                      <input
-                        type="email"
-                        id="form-email"
-                        name="email"
-                        value={formData.email}
-                        onChange={(e) => {
-                          setFormData({ ...formData, email: e.target.value });
-                          if (errors.email) setErrors({ ...errors, email: undefined });
-                        }}
-                        placeholder="name@example.com"
-                        className={`w-full pl-10 pr-3.5 py-3 rounded-xl border bg-slate-50/50 text-slate-900 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all ${
-                          errors.email ? 'border-rose-500 focus:border-rose-500' : 'border-slate-300 focus:border-blue-600'
-                        }`}
-                      />
-                    </div>
-                    {errors.email && (
-                      <p className="text-rose-600 text-xs mt-1 font-medium">{errors.email}</p>
-                    )}
-                  </div>
-
-                  {/* ZIP Code */}
-                  <div>
-                    <label htmlFor="form-zipCode" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      ZIP Code <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
-                      <input
-                        type="text"
-                        id="form-zipCode"
-                        name="zipCode"
-                        value={formData.zipCode}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '').slice(0, 5);
-                          setFormData({ ...formData, zipCode: val });
-                          if (errors.zipCode) setErrors({ ...errors, zipCode: undefined });
-                        }}
-                        placeholder="75201"
-                        maxLength={5}
-                        className={`w-full pl-10 pr-3.5 py-3 rounded-xl border bg-slate-50/50 text-slate-900 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all font-semibold ${
-                          errors.zipCode ? 'border-rose-500 focus:border-rose-500' : 'border-slate-300 focus:border-blue-600'
-                        }`}
-                      />
-                    </div>
-                    {errors.zipCode && (
-                      <p className="text-rose-600 text-xs mt-1 font-medium">{errors.zipCode}</p>
-                    )}
-                  </div>
-
-                  {/* Service Type */}
-                  <div>
-                    <label htmlFor="form-serviceType" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Service Type <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      id="form-serviceType"
-                      name="serviceType"
-                      value={formData.serviceType}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          serviceType: e.target.value as LeadFormData['serviceType'],
-                        })
-                      }
-                      className="w-full px-3.5 py-3 rounded-xl border border-slate-300 bg-slate-50/50 text-slate-900 text-sm focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    >
-                      <option value="Internet">High-Speed Internet</option>
-                      <option value="Cable TV">Cable TV</option>
-                      <option value="Internet + TV">Internet + TV Bundle</option>
-                      <option value="Home Wi-Fi">Home Wi-Fi Mesh</option>
-                      <option value="Business Internet">Business Broadband</option>
-                    </select>
+                <div>
+                  <label htmlFor="form-zipCode" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Enter Your ZIP Code
+                  </label>
+                  <div className="relative">
+                    <MapPin className="w-5 h-5 text-slate-400 absolute left-4 top-3.5 pointer-events-none" />
+                    <input
+                      type="text"
+                      id="form-zipCode"
+                      name="zipCode"
+                      inputMode="numeric"
+                      value={zipCode}
+                      onChange={(e) => setZipCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                      placeholder="e.g. 75001"
+                      maxLength={5}
+                      required
+                      disabled={isSubmitting}
+                      className="w-full pl-11 pr-4 py-3.5 border-2 border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 text-base font-bold focus:outline-none focus:ring-2 focus:ring-[#183b6b] focus:border-[#183b6b] transition-all"
+                    />
                   </div>
                 </div>
 
-                <div className="pt-3">
+                <div>
                   <button
                     type="submit"
-                    disabled={status === 'loading'}
+                    disabled={isSubmitting}
                     id="submit-availability-button"
-                    className="w-full flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] disabled:opacity-75 text-white font-extrabold text-base shadow-lg shadow-blue-600/25 transition-all cursor-pointer"
+                    className="w-full py-4 bg-[#183b6b] hover:bg-[#122f55] active:scale-[0.99] text-white font-extrabold text-base rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-90"
                   >
-                    {status === 'loading' ? (
-                      <>
+                    {isSubmitting ? (
+                      <div className="flex items-center gap-2">
                         <Loader2 className="w-5 h-5 animate-spin" />
                         <span>Searching Providers...</span>
-                      </>
+                      </div>
                     ) : (
-                      <>
-                        <span>Check Availability</span>
-                        <Send className="w-4 h-4" />
-                      </>
+                      <span>Check Availability</span>
                     )}
                   </button>
                 </div>
 
-                {/* Consent & TCPA Disclaimer Text */}
-                <p className="text-center text-[11px] text-slate-500 max-w-xl mx-auto leading-relaxed">
-                  By clicking Check Availability, you agree Cable Internet Plans and its partners may contact you about internet offers at the number and email provided, including by autodialed calls/texts. Consent not required for purchase. Msg/data rates may apply. You can opt out anytime. Call us at{' '}
-                  <a href={`tel:${SITE_CONFIG.PHONE_NUMBER_RAW}`} className="text-blue-600 font-bold hover:underline">
-                    {SITE_CONFIG.PHONE_NUMBER}
-                  </a>.
-                </p>
+                <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+                  <span className="flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5 text-emerald-600" />
+                    5 Agents Available
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Phone className="w-3.5 h-3.5 text-blue-600" />
+                    Toll-Free 24/7 Hotline
+                  </span>
+                </div>
               </form>
             )}
           </div>
@@ -439,3 +269,4 @@ export const AvailabilityForm = forwardRef<AvailabilityFormRef, AvailabilityForm
 );
 
 AvailabilityForm.displayName = 'AvailabilityForm';
+
