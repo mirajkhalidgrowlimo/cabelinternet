@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --color-navy-950: #050E1A;
+  --color-navy-900: #0B192C;
+  --color-navy-800: #122B48;
+  --color-navy-700: #1E3A5F;
+  --color-brand-blue: #2563EB;
+  --color-brand-blue-dark: #1D4ED8;
+  --color-brand-cyan: #0284C7;
+  --color-brand-cyan-light: #38BDF8;
+}
+
+:root {
+  --color-primary: #0B192C;
+  --color-primary-dark: #050E1A;
+  --color-secondary: #2563EB;
+  --color-secondary-hover: #1D4ED8;
+  --color-accent: #0284C7;
+  --color-accent-light: #38BDF8;
+  --color-bg-base: #FFFFFF;
+  --color-bg-subtle: #F8FAFC;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --radius-card: 16px;
+}
+
+html {
+  font-family: var(--font-sans);
+  scroll-behavior: smooth;
+}
+
+/* Custom utility for subtle telecom pulse/ring */
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(1.05); }
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 4s ease-in-out infinite;
+}
+
+/* Focus styles for strict accessibility */
+*:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+}
+

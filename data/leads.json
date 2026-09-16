@@ -1,0 +1,112 @@
+[
+  {
+    "id": "lead-001",
+    "referenceCode": "CIP-72419",
+    "createdAt": "2026-09-16T09:10:32.548Z",
+    "fullName": "Robert Miller",
+    "phone": "(555) 234-8910",
+    "email": "robert.m@example.com",
+    "zipCode": "75001",
+    "streetAddress": "4820 Addison Rd, Apt 3B",
+    "city": "Dallas",
+    "state": "TX",
+    "detectedProviders": [
+      "AT&T Fiber",
+      "Spectrum",
+      "Frontier"
+    ],
+    "selectedPlan": "Everyday (from $50/mo)",
+    "status": "new",
+    "notes": "Inquired about switching from high monthly cable bill. Looking for 300+ Mbps.",
+    "source": "Website Availability Checker",
+    "activities": [
+      {
+        "id": "act-001",
+        "timestamp": "2026-09-16T09:10:32.549Z",
+        "type": "note_added",
+        "message": "Lead created via Website Availability Checker with Reference Code CIP-72419.",
+        "author": "System"
+      }
+    ]
+  },
+  {
+    "id": "lead-002",
+    "referenceCode": "CIP-61842",
+    "createdAt": "2026-09-16T06:45:32.549Z",
+    "fullName": "Sarah Jenkins",
+    "phone": "(555) 872-1194",
+    "email": "sjenkins.home@example.com",
+    "zipCode": "90210",
+    "streetAddress": "710 N Beverly Dr",
+    "city": "Beverly Hills",
+    "state": "CA",
+    "detectedProviders": [
+      "Spectrum",
+      "AT&T Fiber",
+      "Frontier"
+    ],
+    "selectedPlan": "Gigabit Pro (from $70/mo)",
+    "status": "contacted",
+    "notes": "Called customer; confirmed interest in bundle with TV streaming. Follow-up scheduled.",
+    "source": "Direct Phone Inquiry",
+    "activities": [
+      {
+        "id": "act-002-a",
+        "timestamp": "2026-09-16T06:45:32.549Z",
+        "type": "note_added",
+        "message": "Inquiry logged by customer support agent.",
+        "author": "Staff"
+      },
+      {
+        "id": "act-002-b",
+        "timestamp": "2026-09-16T08:15:32.549Z",
+        "type": "call_logged",
+        "message": "Spoke with Sarah regarding 1 Gbps installation timeline.",
+        "author": "Agent Maria"
+      }
+    ]
+  },
+  {
+    "id": "lead-003",
+    "referenceCode": "CIP-49120",
+    "createdAt": "2026-09-15T09:45:32.549Z",
+    "fullName": "Marcus Vance",
+    "phone": "(555) 419-7721",
+    "email": "marcus.vance@example.com",
+    "zipCode": "33101",
+    "streetAddress": "125 Ocean Blvd",
+    "city": "Miami",
+    "state": "FL",
+    "detectedProviders": [
+      "Xfinity",
+      "AT&T Fiber"
+    ],
+    "selectedPlan": "Starter (from $70/mo)",
+    "status": "closed-won",
+    "notes": "Order placed with provider. Scheduled tech visit for this Friday 9am.",
+    "source": "Website Availability Checker",
+    "activities": [
+      {
+        "id": "act-003-a",
+        "timestamp": "2026-09-15T11:45:32.549Z",
+        "type": "note_added",
+        "message": "Customer submitted address checker inquiry.",
+        "author": "System"
+      },
+      {
+        "id": "act-003-b",
+        "timestamp": "2026-09-15T13:45:32.549Z",
+        "type": "call_logged",
+        "message": "Customer accepted Starter internet package with free self-install kit.",
+        "author": "Agent Maria"
+      },
+      {
+        "id": "act-003-c",
+        "timestamp": "2026-09-15T15:45:32.549Z",
+        "type": "status_change",
+        "message": "Status updated to Closed - Won. Order reference dispatched to carrier.",
+        "author": "Agent Maria"
+      }
+    ]
+  }
+]
